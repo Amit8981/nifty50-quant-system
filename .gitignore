@@ -1,0 +1,21 @@
+# Environments & Virtualenv
+venv/
+env/
+.env
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Cloudflared binary & archives
+bin/
+
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Streamlit Local Credentials
+.streamlit/credentials.toml
