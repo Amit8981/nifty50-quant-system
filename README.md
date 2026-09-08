@@ -9,7 +9,7 @@ The system rigorously separates historical data into a **10-Year In-Sample Devel
 ## 🌐 Live Public Shareable Cloud URL
 
 > [!TIP]
-> **Live Cloud Application URL**: **[https://soldier-fibre-corrections-remove.trycloudflare.com](https://soldier-fibre-corrections-remove.trycloudflare.com)**
+
 > Accessible globally over secure HTTPS on desktop and mobile.
 
 ---
@@ -20,7 +20,7 @@ The application is protected by a secure login gate. Use the following default a
 
 | Role | User ID | Password | Access Level |
 | :--- | :--- | :--- | :--- |
-| **Administrator** | `admin` | `admin@nifty50` | Full Access + Admin Feedback Console + Agent Action Dispatcher |
+| **Administrator** | `` | `` | Full Access + Admin Feedback Console + Agent Action Dispatcher |
 | **Institutional Investor** | `investor` | `invest@nifty50` | Full Strategy Analytics + Charts + AI Chatbot + User Feedback Form |
 
 ---
