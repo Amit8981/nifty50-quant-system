@@ -1,7 +1,11 @@
 """
 Streamlit Web Application: NIFTY 50 Quantitative Trading System.
-Features 10-Year In-Sample Development (2015-2025) vs 1-Year Out-of-Sample Validation (2025-2026),
-Risk-Reward Tracking, Interactive Charts, and a User Feedback & Admin Center.
+Features:
+- Authentication & Role-Based Security Layer (Admin & Investor)
+- 10-Year In-Sample Development (2015-2025) vs 1-Year Out-of-Sample Validation (2025-2026)
+- Risk-Reward Tracking & Interactive Visual Analytics
+- Guardrailed Quant AI Assistant (Option A: Protects Proprietary Strategy)
+- User Feedback & Admin Analytics Center
 """
 
 import os
@@ -31,14 +35,24 @@ from utils.feedback_manager import (
     get_feedback_summary,
     update_feedback_status,
 )
+from utils.auth import render_login_screen, logout
+from utils.chatbot import render_chatbot_ui
 
 # Page configuration
 st.set_page_config(
-    page_title="NIFTY 50 Quant System (Development & Validation)",
+    page_title="NIFTY 50 Quant Portal (Secure)",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ----------------- SECURITY / LOGIN GATEWAY -----------------
+# If user is not authenticated, render login screen and halt app execution
+if not render_login_screen():
+    st.stop()
+
+current_user = st.session_state.get("user_info") or {"name": "Guest", "role": "viewer", "email": ""}
+is_admin = current_user.get("role") == "admin"
 
 # Custom CSS styling
 st.markdown(
@@ -88,18 +102,18 @@ st.markdown(
         font-size: 0.74rem;
         font-weight: 600;
     }
-    .badge-warning {
-        background-color: rgba(237, 137, 54, 0.2);
-        color: #ED8936;
-        padding: 2px 7px;
-        border-radius: 4px;
-        font-size: 0.74rem;
-        font-weight: 600;
+    .user-profile-box {
+        background-color: #212631;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 1px solid #363C4E;
+        margin-bottom: 16px;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
 
 # ----------------- DATA LOADING -----------------
 @st.cache_data(show_spinner=False)
@@ -109,9 +123,24 @@ def get_historical_data(force_download: bool = False) -> pd.DataFrame:
 
 # ----------------- SIDEBAR CONTROLS -----------------
 st.sidebar.image("https://img.icons8.com/color/96/bullish.png", width=55)
-st.sidebar.title("System Controls")
+st.sidebar.title("Quant Portal")
+
+# Authenticated User Badge & Logout
+role_badge = "👑 Admin" if is_admin else "👤 Investor"
+st.sidebar.markdown(
+    f"""
+    <div class="user-profile-box">
+        <div style="font-size: 0.88rem; font-weight: 600; color: #FFFFFF;">{current_user['name']}</div>
+        <div style="font-size: 0.78rem; color: #A0AEC0;">Role: <span class="badge-info">{role_badge}</span></div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+if st.sidebar.button("🚪 Sign Out", use_container_width=True):
+    logout()
 
 # 1. Historical Dataset
+st.sidebar.markdown("---")
 st.sidebar.subheader("1. Data & Period Scope")
 refresh_data = st.sidebar.button("🔄 Refresh Data (Yahoo Finance)")
 df_full = get_historical_data(force_download=refresh_data)
@@ -292,8 +321,8 @@ else:
 # ----------------- HEADER & EXECUTIVE DASHBOARD -----------------
 st.title("📈 NIFTY 50 Quantitative Trading System")
 st.markdown(
-    f"**Scope:** `{period_title_badge}` | **Strategy:** `{strategy_name}` | "
-    f"**Capital:** `₹{initial_capital:,.0f}` | **Sizing:** `{sizing_mode}`"
+    f"**Logged In:** `{current_user['name']} ({role_badge})` | **Scope:** `{period_title_badge}` | "
+    f"**Strategy:** `{strategy_name}` | **Capital:** `₹{initial_capital:,.0f}`"
 )
 
 # Executive KPI Cards
@@ -376,7 +405,7 @@ with c5:
 if period_mode == "Side-by-Side Comparison (In-Sample vs Validation)":
     st.markdown("---")
     st.subheader("⚖️ In-Sample Development (10Y) vs. Out-of-Sample Validation (1Y)")
-    
+
     col_is, col_oos = st.columns(2)
     with col_is:
         st.markdown(
@@ -410,12 +439,13 @@ if period_mode == "Side-by-Side Comparison (In-Sample vs Validation)":
 
 
 # ----------------- MAIN TABS -----------------
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📊 Price & Trade Signals",
     "📈 Equity & Drawdown Analysis",
     "📋 Detailed Trade Log",
     "🧠 Under The Hood (Strategy Explainer)",
     "💬 User Feedback & Admin Center",
+    "🤖 Quant AI Assistant",
 ])
 
 # ----------------- TAB 1: PRICE & SIGNALS -----------------
@@ -586,10 +616,10 @@ with tab5:
         with st.form("feedback_form", clear_on_submit=True):
             f_col1, f_col2, f_col3 = st.columns(3)
             with f_col1:
-                u_name = st.text_input("Your Name", placeholder="e.g. Rahul Verma")
-                u_role = st.selectbox("Role", ["Trader", "Portfolio Manager", "Retail Investor", "Researcher", "Other"])
+                u_name = st.text_input("Your Name", value=current_user["name"])
+                u_role = st.selectbox("Role", ["Trader", "Portfolio Manager", "Retail Investor", "Researcher", "Other"], index=0 if is_admin else 2)
             with f_col2:
-                u_email = st.text_input("Email (Optional)", placeholder="rahul@example.com")
+                u_email = st.text_input("Email", value=current_user["email"])
                 u_category = st.selectbox(
                     "Feedback Category",
                     ["Strategy Improvement", "Risk Parameter", "UI / Visualization", "Bug Report", "New Indicator / Feature"],
@@ -621,70 +651,75 @@ with tab5:
 
     st.markdown("---")
 
-    # Admin Mode Switch
+    # Admin Mode Switch (Secured by user role)
     st.markdown("### 🔐 Admin & Agent Analytics Console")
-    admin_mode = st.toggle("Enable Admin View", value=True)
+    if is_admin:
+        admin_mode = st.toggle("Enable Admin View", value=True)
 
-    if admin_mode:
-        # Admin KPI Metrics
-        m1, m2, m3, m4 = st.columns(4)
-        with m1:
-            st.metric("Total Submissions", fb_summary["total_feedbacks"])
-        with m2:
-            st.metric("Average Star Rating", f"{fb_summary['avg_rating']} / 5.0 ⭐")
-        with m3:
-            open_count = fb_summary["status_counts"].get("New", 0) + fb_summary["status_counts"].get("In Review", 0)
-            st.metric("Open Feedback Items", open_count)
-        with m4:
-            agent_actions = fb_summary["status_counts"].get("Agent Action Needed", 0)
-            st.metric("Agent Action Items", agent_actions)
+        if admin_mode:
+            m1, m2, m3, m4 = st.columns(4)
+            with m1:
+                st.metric("Total Submissions", fb_summary["total_feedbacks"])
+            with m2:
+                st.metric("Average Star Rating", f"{fb_summary['avg_rating']} / 5.0 ⭐")
+            with m3:
+                open_count = fb_summary["status_counts"].get("New", 0) + fb_summary["status_counts"].get("In Review", 0)
+                st.metric("Open Feedback Items", open_count)
+            with m4:
+                agent_actions = fb_summary["status_counts"].get("Agent Action Needed", 0)
+                st.metric("Agent Action Items", agent_actions)
 
-        # Feedback Filters
-        st.markdown("#### 📋 Submitted Feedback Registry")
-        af_col1, af_col2 = st.columns(2)
-        with af_col1:
-            cat_filt = st.selectbox("Filter by Category", ["All"] + list(fb_summary["category_counts"].keys()))
-        with af_col2:
-            stat_filt = st.selectbox("Filter by Status", ["All", "New", "In Review", "Agent Action Needed", "Implemented"])
+            st.markdown("#### 📋 Submitted Feedback Registry")
+            af_col1, af_col2 = st.columns(2)
+            with af_col1:
+                cat_filt = st.selectbox("Filter by Category", ["All"] + list(fb_summary["category_counts"].keys()))
+            with af_col2:
+                stat_filt = st.selectbox("Filter by Status", ["All", "New", "In Review", "Agent Action Needed", "Implemented"])
 
-        feedbacks_df = get_all_feedbacks(category_filter=cat_filt, status_filter=stat_filt)
+            feedbacks_df = get_all_feedbacks(category_filter=cat_filt, status_filter=stat_filt)
 
-        if not feedbacks_df.empty:
-            st.dataframe(feedbacks_df, use_container_width=True, height=280)
+            if not feedbacks_df.empty:
+                st.dataframe(feedbacks_df, use_container_width=True, height=280)
 
-            # Export Feedbacks Button
-            fb_csv = feedbacks_df.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                label="📥 Export Feedback Registry as CSV",
-                data=fb_csv,
-                file_name="nifty50_user_feedbacks.csv",
-                mime="text/csv",
-            )
+                fb_csv = feedbacks_df.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    label="📥 Export Feedback Registry as CSV",
+                    data=fb_csv,
+                    file_name="nifty50_user_feedbacks.csv",
+                    mime="text/csv",
+                )
 
-            # Admin Status Update Console
-            st.markdown("---")
-            st.markdown("#### 🛠️ Manage Feedback & Dispatch Agent Actions")
-            with st.form("update_feedback_form"):
-                u_col1, u_col2, u_col3 = st.columns([1, 1, 2])
-                with u_col1:
-                    selected_id = st.selectbox("Select Feedback ID", feedbacks_df["id"].tolist())
-                with u_col2:
-                    new_status = st.selectbox("Update Status", ["New", "In Review", "Agent Action Needed", "Implemented"])
-                with u_col3:
-                    admin_notes = st.text_input("Admin / Agent Modification Notes", placeholder="e.g. Agent implemented ATR trail parameter in v1.2")
+                st.markdown("---")
+                st.markdown("#### 🛠️ Manage Feedback & Dispatch Agent Actions")
+                with st.form("update_feedback_form"):
+                    u_col1, u_col2, u_col3 = st.columns([1, 1, 2])
+                    with u_col1:
+                        selected_id = st.selectbox("Select Feedback ID", feedbacks_df["id"].tolist())
+                    with u_col2:
+                        new_status = st.selectbox("Update Status", ["New", "In Review", "Agent Action Needed", "Implemented"])
+                    with u_col3:
+                        admin_notes = st.text_input("Admin / Agent Modification Notes", placeholder="e.g. Agent implemented ATR trail parameter in v1.2")
 
-                update_btn = st.form_submit_button("Update Status & Save Notes", use_container_width=True)
-                if update_btn:
-                    update_feedback_status(selected_id, new_status, admin_notes)
-                    st.success(f"Feedback #{selected_id} updated to '{new_status}'.")
-                    st.rerun()
+                    update_btn = st.form_submit_button("Update Status & Save Notes", use_container_width=True)
+                    if update_btn:
+                        update_feedback_status(selected_id, new_status, admin_notes)
+                        st.success(f"Feedback #{selected_id} updated to '{new_status}'.")
+                        st.rerun()
+            else:
+                st.info("No feedbacks match the selected filters.")
+    else:
+        st.info("🔒 The Admin Analytics Console is restricted to Administrator accounts. (Log in as `admin` to access).")
 
-        else:
-            st.info("No feedbacks match the selected filters.")
+
+# ----------------- TAB 6: QUANT AI ASSISTANT (GUARDRAILED) -----------------
+with tab6:
+    render_chatbot_ui(active_kpi, strategy_name, period_mode)
+
 
 # Footer
 st.markdown("---")
 st.caption(
-    "NIFTY 50 Quantitative Trading System | In-Sample Development (2015-2025) & Out-of-Sample Validation (2025-2026) | "
-    "Built with Streamlit, Plotly, Pandas & SQLite"
+    f"NIFTY 50 Quant Portal | Logged In: {current_user['name']} | "
+    "In-Sample Development (2015-2025) & Out-of-Sample Validation (2025-2026) | "
+    "Protected by Quantitative Strategy Guardrails"
 )

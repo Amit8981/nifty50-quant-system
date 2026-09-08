@@ -2,23 +2,42 @@
 
 A systematic quantitative trading application built on **daily NIFTY 50 index data (`^NSEI`)** from **2015 to 2026**.
 
-The system rigorously separates historical data into a **10-Year In-Sample Development Period (2015–2025)** and a **1-Year Out-of-Sample Forward Validation Period (2025–2026)** to prevent curve-fitting, tracks both **Planned and Realized Risk:Reward ratios**, and includes an integrated **User Feedback & Admin Analytics Center**.
+The system rigorously separates historical data into a **10-Year In-Sample Development Period (2015–2025)** and a **1-Year Out-of-Sample Forward Validation Period (2025–2026)** to prevent curve-fitting, tracks both **Planned and Realized Risk:Reward ratios**, includes an **Authentication Security Layer**, and features a **Guardrailed Quant AI Assistant**.
 
 ---
 
 ## 🌐 Live Public Shareable Cloud URL
 
 > [!TIP]
-> **Live Cloud Application URL**: **[https://junction-locator-traveller-recipient.trycloudflare.com](https://junction-locator-traveller-recipient.trycloudflare.com)**
-> Accessible globally over secure HTTPS without any installation.
+> **Live Cloud Application URL**: **[https://soldier-fibre-corrections-remove.trycloudflare.com](https://soldier-fibre-corrections-remove.trycloudflare.com)**
+> Accessible globally over secure HTTPS on desktop and mobile.
 
 ---
 
-## 🌟 Key Highlights
+## 🔐 Portal Authentication Credentials
+
+The application is protected by a secure login gate. Use the following default accounts to sign in:
+
+| Role | User ID | Password | Access Level |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | `admin` | `admin@nifty50` | Full Access + Admin Feedback Console + Agent Action Dispatcher |
+| **Institutional Investor** | `investor` | `invest@nifty50` | Full Strategy Analytics + Charts + AI Chatbot + User Feedback Form |
+
+---
+
+## 🤖 Guardrailed Quant AI Assistant (Tab 6)
+
+The embedded AI Quant Assistant allows users to ask questions about strategy performance while protecting proprietary intellectual property:
+- **Answers**: Live win rates, planned vs realized R:R, drawdown limits, holding periods, and in-sample vs out-of-sample methodology.
+- **Strict IP Guardrails**: The assistant detects and refuses to disclose exact mathematical formulas, proprietary indicator parameters, entry threshold values, or underlying source code.
+
+---
+
+## 🌟 Key Performance Highlights
 
 1. **Dual-Period Rigor (Development vs. Validation)**:
-   - **In-Sample Development (2015–2025, ~10 Years)**: Used to develop and calibrate rules across bull runs, bear crashes, and election volatility.
-   - **Out-of-Sample Validation (2025–2026, Last 1 Year)**: Left completely untouched during development to forward-test generalization.
+   - **In-Sample Development (2015–2025, 10 Years)**: Used to calibrate rules across bull runs, crashes, and election cycles.
+   - **Out-of-Sample Validation (2025–2026, Last 1 Year)**: Untouched during development to forward-test generalization.
 2. **Target Accuracy Verified (>= 60% Win Rate)**:
    - **Connors 2-Period RSI Pullback**:
      - *In-Sample (10Y)*: **67.52% Win Rate** (79W / 38L over 117 trades)
@@ -31,10 +50,6 @@ The system rigorously separates historical data into a **10-Year In-Sample Devel
    - **Mathematical Expectancy**: Positive expectancy on every trade (+₹719 to +₹891 / trade).
 4. **Drawdown Protection**:
    - Caps max drawdown to **-10.6% to -13.2%** (compared to NIFTY 50 buy-and-hold crash drawdown of **-38.44%**).
-5. **User Feedback & Admin Center**:
-   - Persistent SQLite feedback engine (`data/feedback.db`).
-   - Non-technical users can submit ratings and modification suggestions.
-   - Admin mode with submission analytics, status management, and CSV export.
 
 ---
 
@@ -51,6 +66,8 @@ The system rigorously separates historical data into a **10-Year In-Sample Devel
 │   ├── backtester.py             # Event-driven engine with dual sizing & R:R tracking
 │   └── strategies.py             # Battle-tested models (Connors RSI, BB Mean Reversion)
 ├── utils/
+│   ├── auth.py                   # Authentication & SHA-256 session security
+│   ├── chatbot.py                # Guardrailed Quant AI Assistant
 │   ├── metrics.py                # Performance KPIs (Win Rate, Sharpe, Sortino, MaxDD, CAGR)
 │   ├── plot_utils.py             # Plotly charts with In-Sample/Validation demarcation
 │   └── feedback_manager.py       # SQLite database operations for user & admin feedback
@@ -77,21 +94,3 @@ HOME=/Users/amitpatra/Documents/Investment streamlit run app.py --server.port=85
 ```
 
 Access locally at `http://localhost:8501`.
-
----
-
-## ☁️ Deploying to GitHub & Cloud Platforms
-
-### 1. Push to GitHub
-```bash
-# Set your remote repository
-git remote add origin https://github.com/<your-username>/nifty50-quant-strategy.git
-git branch -M main
-git push -u origin main
-```
-
-### 2. Deploy to Streamlit Community Cloud (Free)
-1. Go to [share.streamlit.io](https://share.streamlit.io).
-2. Connect your GitHub account.
-3. Select this repository, branch `main`, and main file path `app.py`.
-4. Click **Deploy**!
